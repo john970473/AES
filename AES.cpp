@@ -7,134 +7,7 @@
 using namespace std;
 #define MAX 300
 
-void read_from_string(int* big, char* str) //hex input convert to int 
-{
-    int i=0, len=strlen(str);
-    memset(big, 0, sizeof(int)*MAX);
-    for(i=len-1; i>=0; --i){
-        if(str[i]>='0' && str[i]<='9')
-            big[len - i - 1] = str[i] - '0';
-        else
-            big[len - i - 1] = str[i] - 'a' + 10;
-    }
 
-}
-
-void big_print(int *big) //print big number and convert from int to hex
-{
-    int i=MAX-1;
-    for(i=MAX-1;i>0 && big[i]==0; --i);
-    while(i>=0){
-        if(big[i]==10)
-            cout << 'a';
-        else if (big[i]==11)
-            cout << 'b';
-        else if (big[i]==12)
-            cout << 'c';
-        else if (big[i]==13)
-            cout << 'd';
-        else if (big[i]==14)
-            cout << 'e';
-        else if (big[i]==15)
-            cout << 'f';
-        else
-            cout<<big[i];
-        --i;
-    }
-    cout << endl;
-}
-
-void big_assign(int *a, int *b) // b is assigned to a
-{
-    memset(a, 0, sizeof(int)*MAX);
-    int i;
-    for (i=MAX-1 ; i>=0 ; i--)
-        a[i] = b[i];
-}
-int big_compare(int *a, int *b) // if a>b return positive number , if a=b return 0 , if a<b return negative number
-{
-    int i=MAX-1;
-    while(i>0 && a[i]==b[i]) --i;
-    return a[i]-b[i];
-}
-
-void big_add(int *rst, int *a, int *b) // rst = a + b
-{
-    memset(rst, 0, sizeof(int)*MAX);
-    int i, sum, carry;
-    for(carry=i=0; i<MAX; ++i){
-        rst[i] = a[i] + b[i] + carry;
-        carry = rst[i] / 16;
-        rst[i]%=16;
-    }
-}
-
-bool big_sub(int *rst, int *a, int *b) // rst = a-b return sign = 0 , if a<b => rst = b-a and return sign = 1
-{
-    memset(rst, 0, sizeof(int)*MAX);
-    int i, borrow;
-    bool sign=0;
-	
-    if (big_compare(a,b)>=0){ // a<b
-        for(borrow=i=0; i<MAX; ++i) {
-            rst[i] = a[i]-b[i]-borrow; // sub borrow number last time
-            if(rst[i]<0) {
-                borrow=1, rst[i]+=16; // rst < 0 => need to borrow
-            } else {
-                borrow=0; 
-            }
-        }
-
-    }
-    else { // a<b  
-        for(borrow=i=0; i<MAX; ++i) {
-            rst[i] = b[i]-a[i]-borrow; 
-            if(rst[i]<0) {
-                borrow=1, rst[i]+=16; 
-            } else {
-                borrow=0; 
-            }
-        }
-        sign=1;
-    }
-    return sign;
-}
-
-void big_mul(int *rst, int *a, int *b) //rst = a*b
-{
-    int i, j, carry;
-    memset(rst, 0, sizeof(int)*MAX); 
-    for(i=0; i<MAX; ++i) {
-        if(a[i]==0) continue;
-        for(j=0; i+j<MAX; ++j)
-            rst[i+j]+= a[i]*b[j];
-    }
-    
-    for(carry=i=0; i<MAX; ++i) { // if rst[i] >= 16 , need to add a carry
-        rst[i]+=carry;
-        carry = rst[i] / 16;
-        rst[i] %= 16;
-    }
-}
-
-void big_div(int *div, int *rst, int *a, int *b) // a/b = div ... rst
-{
-    int sub[MAX];
-    int i=0, j, carry;
-    memset(div, 0, sizeof(int)*MAX);
-    memset(rst, 0, sizeof(int)*MAX);
-    while(!big_sub(rst, a, b)){ //keep doing rst = a-b , a = rst , div + 1
-        big_assign(a,rst); 
-        div[0]++; 
-        for(i=0 ; i<MAX ; i++){ // carry 
-            if(div[i] == 16){
-                div[i] = 0;
-                div[i+1] += 1;
-            }
-        }
-    }
-
-}
 void input_func(uint8_t* input){
 uint8_t temp[49];
 int ch,i,c;
@@ -191,10 +64,146 @@ void dec_to_hex(uint8_t input){
 uint8_t GF256_add(uint8_t a, uint8_t b, uint8_t mx){
 	return a^b;
 }
-int main(){
+uint8_t GF256_mult_x(uint8_t a, uint8_t mx){
+
+} 
+uint8_t GF256_mult(uint8_t a, uint8_t b, uint8_t mx){
+	uint8_t p=0;
+    uint8_t carry;
+    int i;
+    for(i=0;i<8;i++)
+    {
+        if(b & 1)
+            p ^=a;
+        carry = a & 0x80;
+        a = a<<1;
+        if(carry)
+            a^=0x1b;
+        b = b>>1;
+    }
+    return p;
+} 
+
+uint8_t GF256_inv(uint8_t a, uint8_t mx){
+	uint8_t j, b = a;
+    for (j = 14; --j;)              /* for j from 13 downto 1 */
+        b = GF256_mult(b, j&1 ? b : a,0);   /* alternatively square and multiply */
+    return b;
+} 
+
+int bin_add(uint8_t a){
+	int n = int(a);
+	int count = 0;
+	while (n >= 2){
+		if(n%2!=0)
+			count++;
+		n /= 2;
+	}
+	count += n ;
+//	cout<<count;
+	if(count %2 == 1)
+		return 1;
+	else
+		return 0;
+}
+
+uint8_t SubBytes(uint8_t a){
+	uint8_t k = GF256_inv(a,0);
+	int b[8];
+	b[0] = bin_add(0xf8&k) ^ 0;
+	b[1] = bin_add(0x7c&k) ^ 1;
+	b[2] = bin_add(0x3e&k) ^ 1;
+	b[3] = bin_add(0x1f&k) ^ 0;
+	b[4] = bin_add(0x8f&k) ^ 0;
+	b[5] = bin_add(0xc7&k) ^ 0;
+	b[6] = bin_add(0xe3&k) ^ 1;
+	b[7] = bin_add(0xf1&k) ^ 1;	
+
+	return (b[0]*128+b[1]*64+b[2]*32+b[3]*16+b[4]*8+b[5]*4+b[6]*2+b[7]*1);
+}
+
+void ShiftRows(uint8_t* a){
+	uint8_t* b = new uint8_t[16]();
+	b[0]=a[0];
+	b[1]=a[5];
+	b[2]=a[10];
+	b[3]=a[15];
+	b[4]=a[4];
+	b[5]=a[9];
+	b[6]=a[14];
+	b[7]=a[3];
+	b[8]=a[8];
+	b[9]=a[13];
+	b[10]=a[2];
+	b[11]=a[7];
+	b[12]=a[12];
+	b[13]=a[1];
+	b[14]=a[6];
+	b[15]=a[11];	 
 	
+	for (int i = 0; i< 15 ; i++)
+		a[i] = b[i];
+}
+
+void MixColumns(uint8_t* a){
+	uint8_t b[16] = {0x02, 0x03, 0x01, 0x01, 0x01, 0x02, 0x03, 0x01, 0x01, 0x01, 0x02, 0x03, 0x03, 0x01, 0x01, 0x02}; 
+	uint8_t* c = new uint8_t[16]();
+	uint8_t k = 0 ;
+	int n = 0;
+	for (int i=0,j=0 ; i< 16 ; i++){
+		cout << "b=" << hex << +b[i] << " a=" << hex << +a[j] << endl;
+		k =  (b[i]&a[j]);
+		cout << "k=" << hex << +k << endl;
+		j++;
+		if(j==4){
+			j = 0;
+			c[n] = k;
+			k = 0;
+			n++;
+			
+		}
+	}
+	
+	for (int i=0, j=4 ; i< 16 ; i++){
+		k ^= b[i]&a[j];
+		j++;
+		if(j==8){
+			j = 4;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i=0,j=8 ; i< 16 ; i++){
+		k ^= b[i]&a[j];
+		j++;
+		if(j==12){
+			j = 8;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i=0,j=12 ; i< 16 ; i++){
+		k ^= b[i]&a[j];
+		j++;
+		if(j==16){
+			j = 12;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i = 0; i< 15 ; i++)
+		a[i] = c[i];
+	
+}
+
+int main(){
 	uint8_t* plaintext = new uint8_t[16]();
 	uint8_t* key = new uint8_t[300]();
+	uint8_t* shift_row = new uint8_t[16]();
+	
 	cout << "<AES Encryption>" << endl;
 	cout << "Plaintext: ";
 	input_func(plaintext);
@@ -202,48 +211,29 @@ int main(){
     input_func(key);
     cout << endl << "--------Encryption--------" << endl;
     cout << "s0:";
-    for (int i=0 ; i<16 ; i++)
-    	dec_to_hex(GF256_add(plaintext[i],key[i],0));
+    for (int i=0 ; i<16 ; i++){
+    	plaintext[i] = GF256_add(plaintext[i],key[i],0);
+    	dec_to_hex(plaintext[i]);
+	}
+    cout << endl; 
     
-//    cout << +(plaintext[0]^key[0]);
-//	cout << +plaintext[0] << endl ;
-  
+    for (int i=0 ; i<16 ; i++){
+    	plaintext[i] = SubBytes(plaintext[i]);
+    	dec_to_hex(plaintext[i]);
+	}
+    cout << endl; 
     
+    ShiftRows(plaintext);
+    for (int i=0 ; i<16 ; i++){
+    	dec_to_hex(plaintext[i]);
+	}
+	cout << endl; 
+	MixColumns(plaintext);
+    for (int i=0 ; i<16 ; i++){
+    	dec_to_hex(plaintext[i]);
+	}
+	cout << endl; 
     
-    //cout << plaintext << endl << key << endl << plaintext[0];
-
-//    char *str1 = new char[300](); // input a 
-//    char *str2 = new char[300](); // input b
-//    int a[MAX],b[MAX],add[MAX],sub[MAX],mul[MAX],div[MAX],rem[MAX];
-//    cout << "a= ";
-//    cin >> str1;
-//    cout << "b= ";
-//    cin >> str2;
-//
-//    read_from_string(a,str1);
-//    read_from_string(b,str2);
-//
-//    cout << "a+b= ";
-//    big_add(add,a,b);
-//    big_print(add);
-//
-//    cout << "a-b= ";
-//    if(big_sub(sub,a,b)) // if a<b , add a sign '-'
-//        cout << '-';
-//    big_print(sub);
-//
-//    cout << "a*b= ";
-//    big_mul(mul,a,b);
-//    big_print(mul);
-//
-//    cout << "a/b= ";
-//    big_div(div, rem ,a, b);
-//    big_print(div);
-//
-//    cout << "a%b= ";
-//    big_div(div, rem ,a, b);
-//    big_print(a);
-
 
 
     return 0;
