@@ -61,13 +61,13 @@ void dec_to_hex(uint8_t input){
 	
 }
 
-uint8_t GF256_add(uint8_t a, uint8_t b, uint8_t mx){
+uint8_t GF256_add(uint8_t a, uint8_t b){
 	return a^b;
 }
 uint8_t GF256_mult_x(uint8_t a, uint8_t mx){
 
 } 
-uint8_t GF256_mult(uint8_t a, uint8_t b, uint8_t mx){
+uint8_t GF256_mult(uint8_t a, uint8_t b){
 	uint8_t p=0;
     uint8_t carry;
     int i;
@@ -84,10 +84,10 @@ uint8_t GF256_mult(uint8_t a, uint8_t b, uint8_t mx){
     return p;
 } 
 
-uint8_t GF256_inv(uint8_t a, uint8_t mx){
+uint8_t GF256_inv(uint8_t a){
 	uint8_t j, b = a;
     for (j = 14; --j;)              /* for j from 13 downto 1 */
-        b = GF256_mult(b, j&1 ? b : a,0);   /* alternatively square and multiply */
+        b = GF256_mult(b, j&1 ? b : a);   /* alternatively square and multiply */
     return b;
 } 
 
@@ -108,7 +108,7 @@ int bin_add(uint8_t a){
 }
 
 uint8_t SubBytes(uint8_t a){
-	uint8_t k = GF256_inv(a,0);
+	uint8_t k = GF256_inv(a);
 	int b[8];
 	b[0] = bin_add(0xf8&k) ^ 0;
 	b[1] = bin_add(0x7c&k) ^ 1;
@@ -141,7 +141,7 @@ void ShiftRows(uint8_t* a){
 	b[14]=a[6];
 	b[15]=a[11];	 
 	
-	for (int i = 0; i< 15 ; i++)
+	for (int i = 0; i< 16 ; i++)
 		a[i] = b[i];
 }
 
@@ -151,9 +151,7 @@ void MixColumns(uint8_t* a){
 	uint8_t k = 0 ;
 	int n = 0;
 	for (int i=0,j=0 ; i< 16 ; i++){
-		cout << "b=" << hex << +b[i] << " a=" << hex << +a[j] << endl;
-		k =  (b[i]&a[j]);
-		cout << "k=" << hex << +k << endl;
+		k =  k ^ GF256_mult(b[i],a[j]);
 		j++;
 		if(j==4){
 			j = 0;
@@ -165,7 +163,7 @@ void MixColumns(uint8_t* a){
 	}
 	
 	for (int i=0, j=4 ; i< 16 ; i++){
-		k ^= b[i]&a[j];
+		k =  k ^ GF256_mult(b[i],a[j]);
 		j++;
 		if(j==8){
 			j = 4;
@@ -175,7 +173,7 @@ void MixColumns(uint8_t* a){
 		}
 	}
 	for (int i=0,j=8 ; i< 16 ; i++){
-		k ^= b[i]&a[j];
+		k =  k ^ GF256_mult(b[i],a[j]);
 		j++;
 		if(j==12){
 			j = 8;
@@ -185,7 +183,7 @@ void MixColumns(uint8_t* a){
 		}
 	}
 	for (int i=0,j=12 ; i< 16 ; i++){
-		k ^= b[i]&a[j];
+		k =  k ^ GF256_mult(b[i],a[j]);
 		j++;
 		if(j==16){
 			j = 12;
@@ -194,7 +192,26 @@ void MixColumns(uint8_t* a){
 			n++;
 		}
 	}
-	for (int i = 0; i< 15 ; i++)
+	for (int i = 0; i< 16 ; i++)
+		a[i] = c[i];
+	
+}
+
+void KeySchedule (uint8_t* a, uint8_t rcon){
+	uint8_t Rot[4] = {a[13],a[14],a[15],a[12]};
+	
+	uint8_t* c = new uint8_t[16]();
+	for (int i =0 ; i < 4 ; i++)
+		Rot[i] = SubBytes(Rot[i]);
+		
+	c[0] = a[0] ^ Rot[0] ^ rcon;
+	for (int i =1 ; i < 4 ; i++)
+		c[i] = a[i] ^ Rot[i];
+		
+	for (int i =0 ; i < 12 ; i++)
+		c[i+4] = a[i+4] ^ c[i];
+		
+	for (int i = 0; i< 16 ; i++)
 		a[i] = c[i];
 	
 }
@@ -203,7 +220,7 @@ int main(){
 	uint8_t* plaintext = new uint8_t[16]();
 	uint8_t* key = new uint8_t[300]();
 	uint8_t* shift_row = new uint8_t[16]();
-	
+	cout << hex << +(0x36^0x9f^0x01);
 	cout << "<AES Encryption>" << endl;
 	cout << "Plaintext: ";
 	input_func(plaintext);
@@ -212,7 +229,7 @@ int main(){
     cout << endl << "--------Encryption--------" << endl;
     cout << "s0:";
     for (int i=0 ; i<16 ; i++){
-    	plaintext[i] = GF256_add(plaintext[i],key[i],0);
+    	plaintext[i] = GF256_add(plaintext[i],key[i]);
     	dec_to_hex(plaintext[i]);
 	}
     cout << endl; 
@@ -233,8 +250,19 @@ int main(){
     	dec_to_hex(plaintext[i]);
 	}
 	cout << endl; 
-    
 
+	KeySchedule(key,0x01);
+	for (int i=0 ; i<16 ; i++){
+    	dec_to_hex(key[i]);
+	}
+	cout << endl; 
+	
+	cout << "s1:";
+	for (int i=0 ; i<16 ; i++){
+    	plaintext[i] = GF256_add(plaintext[i],key[i]);
+    	dec_to_hex(plaintext[i]);
+	}
+    cout << endl; 
 
     return 0;
 }
