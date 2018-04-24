@@ -3,8 +3,7 @@ AES Encryption and Decryption
 ## Uint : Hex
 
 ## intput
-
-<AES Encryption><br>
+<AES Encryption>
 Plaintext: a3 c5 08 08 78 a4 ff d3 00 ff 36 36 28 5f 01 02<br>
 Key: 36 8a c0 f4 ed cf 76 a6 08 a3 b6 78 31 31 27 6e<br>
   
