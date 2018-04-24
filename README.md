@@ -1,19 +1,19 @@
-## AES Encryption and Decryption
-# Environment : Dev C++
-# Uint : Hex
+AES Encryption and Decryption
+## Environment : Dev C++
+## Uint : Hex
 
-# intput
+## intput
 a3 c5 08 08 78 a4 ff d3 00 ff 36 36 28 5f 01 02
 36 8a c0 f4 ed cf 76 a6 08 a3 b6 78 31 31 27 6e
-# output
+## output
 <AES Encryption>
-Plaintext: a3 c5 08 08 78 a4 ff d3 00 ff 36 36 28 5f 01 02
-Key: 36 8a c0 f4 ed cf 76 a6 08 a3 b6 78 31 31 27 6e
---------Encryption--------
-S0: 95 4f c8 fc 95 6b 89 75 08 5c 80 4e 19 6e 26 6c
-S1: b8 8e 7b 5f d0 85 77 2d ba 81 47 eb 88 01 cc 99
-S2: 69 66 3a 41 30 d9 3a c2 db 3e bc 8c d5 89 b1 8c
-S3: a1 08 a2 2e d8 48 31 5d 3d 28 fd f6 c5 72 ad cb
+Plaintext: a3 c5 08 08 78 a4 ff d3 00 ff 36 36 28 5f 01 02<br>
+Key: 36 8a c0 f4 ed cf 76 a6 08 a3 b6 78 31 31 27 6e<br>
+--------Encryption--------<br>
+S0: 95 4f c8 fc 95 6b 89 75 08 5c 80 4e 19 6e 26 6c<br>
+S1: b8 8e 7b 5f d0 85 77 2d ba 81 47 eb 88 01 cc 99<br>
+S2: 69 66 3a 41 30 d9 3a c2 db 3e bc 8c d5 89 b1 8c<br>
+S3: a1 08 a2 2e d8 48 31 5d 3d 28 fd f6 c5 72 ad cb<br>
 S4: 5c c0 34 88 e9 da 78 b0 28 99 1f 10 20 02 37 ac
 S5: e1 12 c2 ac 45 d2 2b c9 d0 53 3a 71 aa 5f a2 f2
 S6: 94 00 6c e3 e7 91 46 9c 30 e0 eb 8c 4f bb 89 64
