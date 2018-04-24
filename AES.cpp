@@ -229,20 +229,70 @@ void InvShiftRows(uint8_t* a){
 }
 
 uint8_t InvSubBytes(uint8_t a){
-	
-	a ^= 0xc6;
-	
-	int b[8];
-	b[0] = bin_add(0x25&a) ;
-	b[1] = bin_add(0x92&a) ;
-	b[2] = bin_add(0x49&a) ;
-	b[3] = bin_add(0xa4&a) ;
-	b[4] = bin_add(0xa2&a) ;
-	b[5] = bin_add(0x29&a) ;
-	b[6] = bin_add(0x94&a) ;
-	b[7] = bin_add(0x4a&a) ;	
 
-	return (b[0]*128+b[1]*64+b[2]*32+b[3]*16+b[4]*8+b[5]*4+b[6]*2+b[7]*1);
+	int b[8];
+	b[0] = bin_add(0x52&a) ^0;
+	b[1] = bin_add(0x29&a) ^0;
+	b[2] = bin_add(0x94&a) ^0;
+	b[3] = bin_add(0x4a&a) ^0; 
+	b[4] = bin_add(0x25&a) ^0;
+	b[5] = bin_add(0x92&a) ^1;
+	b[6] = bin_add(0x49&a) ^0;
+	b[7] = bin_add(0xa4&a) ^1;
+
+	return GF256_inv(b[0]*128+b[1]*64+b[2]*32+b[3]*16+b[4]*8+b[5]*4+b[6]*2+b[7]*1);
+}
+
+void InvMixColumns(uint8_t* a){
+	uint8_t b[16] = {0x0e, 0x0b, 0x0d, 0x09, 0x09, 0x0e, 0x0b, 0x0d, 0x0d, 0x09, 0x0e, 0x0b, 0x0b, 0x0d, 0x09, 0x0e}; 
+	uint8_t* c = new uint8_t[16]();
+	uint8_t k = 0 ;
+	int n = 0;
+	for (int i=0,j=0 ; i< 16 ; i++){
+		k =  k ^ GF256_mult(b[i],a[j]);
+		j++;
+		if(j==4){
+			j = 0;
+			c[n] = k;
+			k = 0;
+			n++;
+			
+		}
+	}
+	
+	for (int i=0, j=4 ; i< 16 ; i++){
+		k =  k ^ GF256_mult(b[i],a[j]);
+		j++;
+		if(j==8){
+			j = 4;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i=0,j=8 ; i< 16 ; i++){
+		k =  k ^ GF256_mult(b[i],a[j]);
+		j++;
+		if(j==12){
+			j = 8;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i=0,j=12 ; i< 16 ; i++){
+		k =  k ^ GF256_mult(b[i],a[j]);
+		j++;
+		if(j==16){
+			j = 12;
+			c[n] = k;
+			k = 0;
+			n++;
+		}
+	}
+	for (int i = 0; i< 16 ; i++)
+		a[i] = c[i];
+	
 }
 
 void AES_Decrypt(uint8_t* plaintext , uint8_t* ciphertext , uint8_t** key){
@@ -259,54 +309,51 @@ void AES_Decrypt(uint8_t* plaintext , uint8_t* ciphertext , uint8_t** key){
     	dec_to_hex(ciphertext[i]);
 	}
     cout << endl; 
-    InvShiftRows(ciphertext); 
     
-    for (int i=0 ; i<16 ; i++){
-    	dec_to_hex(ciphertext[i]);
+    
+    //s'1~s'9
+    for (int s=1 ; s<10 ; s++){
+    	cout << "s'" << s << ":";
+	    InvShiftRows(ciphertext); 
+	    	
+		for (int i=0 ; i<16 ; i++){
+		    ciphertext[i] = InvSubBytes(ciphertext[i]);
+		}
+	
+		for (int i=0 ; i<16 ; i++){
+	    	ciphertext[i] = GF256_add(ciphertext[i],key[10-s][i]);
+		}
+		
+		InvMixColumns(ciphertext);
+		
+		for (int i=0 ; i<16 ; i++){
+	    	dec_to_hex(ciphertext[i]);
+		}
+		cout << endl;
+	
+	}
+	
+	cout << "Plaintext:";
+	InvShiftRows(ciphertext); 
+	    	
+	for (int i=0 ; i<16 ; i++){
+	    ciphertext[i] = InvSubBytes(ciphertext[i]);
 	}
 	
 	for (int i=0 ; i<16 ; i++){
-	    ciphertext[i] = SubBytes(ciphertext[i]);
+    	ciphertext[i] = GF256_add(ciphertext[i],key[0][i]);
 	}
+		
 	for (int i=0 ; i<16 ; i++){
     	dec_to_hex(ciphertext[i]);
 	}
+	cout << endl;
 	
-//    //s1~s9
-//    for (int s=1 ; s <=9 ; s++){
-//    	cout << "s" << s <<":";
-//	    for (int i=0 ; i<16 ; i++){
-//	    	plaintext[i] = SubBytes(plaintext[i]);
-//		}
-//	    ShiftRows(plaintext); 
-//		MixColumns(plaintext);
-//		KeySchedule(key,Rcon[s-1]);
-//		
-//		for (int i=0 ; i<16 ; i++){
-//	    	plaintext[i] = GF256_add(plaintext[i],key[i]);
-//	    	dec_to_hex(plaintext[i]);
-//		}
-//	    cout << endl; 
-//	}
-//	
-//	//ciphertext
-//	cout << "Ciphertext:";
-//	for (int i=0 ; i<16 ; i++){
-//	    	plaintext[i] = SubBytes(plaintext[i]);
-//		}
-//	ShiftRows(plaintext); 
-//	//MixColumns(plaintext);
-//		
-//		
-//	for (int i=0 ; i<16 ; i++){
-//	    plaintext[i] = GF256_add(plaintext[i],key[i]);
-//	    dec_to_hex(plaintext[i]);
-//	}
-//	cout << endl;
     
 }
 
 int main(){
+	
 	uint8_t* plaintext = new uint8_t[16]();
 	uint8_t* ciphertext = new uint8_t[16]();
 	uint8_t** key;
